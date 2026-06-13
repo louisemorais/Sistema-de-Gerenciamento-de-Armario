@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Data.SQLite;
@@ -47,16 +47,6 @@ namespace Agenda
                 using (var conn = DataBaseconnection())
                 {
                     string sql = @"
-                        CREATE TABLE IF NOT EXISTS perfil (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            permissao TEXT NOT NULL
-                        );
-
-                        CREATE TABLE IF NOT EXISTS setor (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            nome_setor TEXT NOT NULL
-                        );
-
                         CREATE TABLE IF NOT EXISTS vestiario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             vestiario TEXT NOT NULL
@@ -65,34 +55,31 @@ namespace Agenda
                         CREATE TABLE IF NOT EXISTS armario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             numero_armario INTEGER NOT NULL,
-                            id_vestiario INTEGER NULL,
-                            perfil_id INTEGER NOT NULL,
-                            FOREIGN KEY (id_vestiario) REFERENCES vestiario(id),
-                            FOREIGN KEY (perfil_id) REFERENCES perfil(id)
+                            vestiario_id INTEGER NOT NULL,
+                            FOREIGN KEY (vestiario_id) REFERENCES vestiario(id)
                         );
 
-                        CREATE INDEX IF NOT EXISTS idx_armario_id_vestiario ON armario (id_vestiario);
-                        CREATE INDEX IF NOT EXISTS idx_armario_perfil_id ON armario (perfil_id);
+                        CREATE INDEX IF NOT EXISTS idx_armario_vestiario_id ON armario (vestiario_id);
+
+                        CREATE TABLE IF NOT EXISTS perfil (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            permissao TEXT NOT NULL,
+                            funcao TEXT NOT NULL
+                        );
 
                         CREATE TABLE IF NOT EXISTS funcionario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             nome TEXT NOT NULL,
-                            matricula INTEGER NOT NULL,
-                            telefone INTEGER NULL,
-                            id_perfil INTEGER NULL,
+                            telefone TEXT UNIQUE,
                             armario_id INTEGER NOT NULL,
-                            vestiario_id INTEGER NOT NULL,
-                            setor_id INTEGER NOT NULL,
+                            matricula INTEGER NOT NULL,
+                            perfil_id INTEGER NOT NULL,
                             FOREIGN KEY (armario_id) REFERENCES armario(id),
-                            FOREIGN KEY (vestiario_id) REFERENCES vestiario(id),
-                            FOREIGN KEY (setor_id) REFERENCES setor(id),
-                            FOREIGN KEY (id_perfil) REFERENCES perfil(id)
+                            FOREIGN KEY (perfil_id) REFERENCES perfil(id)
                         );
 
-                        CREATE INDEX IF NOT EXISTS idx_funcionario_id_perfil ON funcionario (id_perfil);
                         CREATE INDEX IF NOT EXISTS idx_funcionario_armario_id ON funcionario (armario_id);
-                        CREATE INDEX IF NOT EXISTS idx_funcionario_vestiario_id ON funcionario (vestiario_id);
-                        CREATE INDEX IF NOT EXISTS idx_funcionario_setor_id ON funcionario (setor_id);
+                        CREATE INDEX IF NOT EXISTS idx_funcionario_perfil_id ON funcionario (perfil_id);
 
                         CREATE TABLE IF NOT EXISTS Contatos (
                             Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -249,16 +236,17 @@ namespace Agenda
             }
         }
 
-        public static void InserirPerfil(string permissao)
+        public static void InserirPerfil(string permissao, string funcao)
         {
             try
             {
                 using (var conn = DataBaseconnection())
                 {
-                    string sql = "INSERT INTO perfil (permissao) VALUES (@permissao)";
+                    string sql = "INSERT INTO perfil (permissao, funcao) VALUES (@permissao, @funcao)";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@permissao", permissao ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@funcao", funcao ?? string.Empty);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -269,16 +257,17 @@ namespace Agenda
             }
         }
 
-        public static void AtualizarPerfil(int id, string permissao)
+        public static void AtualizarPerfil(int id, string permissao, string funcao)
         {
             try
             {
                 using (var conn = DataBaseconnection())
                 {
-                    string sql = "UPDATE perfil SET permissao = @permissao WHERE id = @id";
+                    string sql = "UPDATE perfil SET permissao = @permissao, funcao = @funcao WHERE id = @id";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@permissao", permissao ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@funcao", funcao ?? string.Empty);
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                     }
@@ -307,92 +296,6 @@ namespace Agenda
             catch (Exception error)
             {
                 Console.WriteLine("Erro deletar perfil: " + error.Message);
-            }
-        }
-
-        // ========== MÉTODOS CRUD PARA SETOR ==========
-        public static DataTable GetSetores()
-        {
-            SQLiteDataAdapter adapter = null;
-            DataTable table = new DataTable();
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "SELECT * FROM setor";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro selecionar setores: " + error.Message);
-                return null;
-            }
-        }
-
-        public static void InserirSetor(string nomeSetor)
-        {
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "INSERT INTO setor (nome_setor) VALUES (@nome_setor)";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@nome_setor", nomeSetor ?? string.Empty);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro inserir setor: " + error.Message);
-            }
-        }
-
-        public static void AtualizarSetor(int id, string nomeSetor)
-        {
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "UPDATE setor SET nome_setor = @nome_setor WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@nome_setor", nomeSetor ?? string.Empty);
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro atualizar setor: " + error.Message);
-            }
-        }
-
-        public static void ExcluirSetor(int id)
-        {
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "DELETE FROM setor WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro deletar setor: " + error.Message);
             }
         }
 
@@ -507,18 +410,17 @@ namespace Agenda
             }
         }
 
-        public static void InserirArmario(int numeroArmario, int? idVestiario, int perfilId)
+        public static void InserirArmario(int numeroArmario, int vestiarioId)
         {
             try
             {
                 using (var conn = DataBaseconnection())
                 {
-                    string sql = "INSERT INTO armario (numero_armario, id_vestiario, perfil_id) VALUES (@numero_armario, @id_vestiario, @perfil_id)";
+                    string sql = "INSERT INTO armario (numero_armario, vestiario_id) VALUES (@numero_armario, @vestiario_id)";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@numero_armario", numeroArmario);
-                        cmd.Parameters.AddWithValue("@id_vestiario", idVestiario ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@perfil_id", perfilId);
+                        cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -529,18 +431,17 @@ namespace Agenda
             }
         }
 
-        public static void AtualizarArmario(int id, int numeroArmario, int? idVestiario, int perfilId)
+        public static void AtualizarArmario(int id, int numeroArmario, int vestiarioId)
         {
             try
             {
                 using (var conn = DataBaseconnection())
                 {
-                    string sql = "UPDATE armario SET numero_armario = @numero_armario, id_vestiario = @id_vestiario, perfil_id = @perfil_id WHERE id = @id";
+                    string sql = "UPDATE armario SET numero_armario = @numero_armario, vestiario_id = @vestiario_id WHERE id = @id";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@numero_armario", numeroArmario);
-                        cmd.Parameters.AddWithValue("@id_vestiario", idVestiario ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@perfil_id", perfilId);
+                        cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                     }
@@ -622,22 +523,20 @@ namespace Agenda
             }
         }
 
-        public static void InserirFuncionario(string nome, int matricula, int? telefone, int? idPerfil, int armarioId, int vestiarioId, int setorId)
+        public static void InserirFuncionario(string nome, string telefone, int armarioId, int matricula, int perfilId)
         {
             try
             {
                 using (var conn = DataBaseconnection())
                 {
-                    string sql = "INSERT INTO funcionario (nome, matricula, telefone, id_perfil, armario_id, vestiario_id, setor_id) VALUES (@nome, @matricula, @telefone, @id_perfil, @armario_id, @vestiario_id, @setor_id)";
+                    string sql = "INSERT INTO funcionario (nome, telefone, armario_id, matricula, perfil_id) VALUES (@nome, @telefone, @armario_id, @matricula, @perfil_id)";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@nome", nome ?? string.Empty);
-                        cmd.Parameters.AddWithValue("@matricula", matricula);
                         cmd.Parameters.AddWithValue("@telefone", telefone ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@id_perfil", idPerfil ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@armario_id", armarioId);
-                        cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
-                        cmd.Parameters.AddWithValue("@setor_id", setorId);
+                        cmd.Parameters.AddWithValue("@matricula", matricula);
+                        cmd.Parameters.AddWithValue("@perfil_id", perfilId);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -648,22 +547,20 @@ namespace Agenda
             }
         }
 
-        public static void AtualizarFuncionario(int id, string nome, int matricula, int? telefone, int? idPerfil, int armarioId, int vestiarioId, int setorId)
+        public static void AtualizarFuncionario(int id, string nome, string telefone, int armarioId, int matricula, int perfilId)
         {
             try
             {
                 using (var conn = DataBaseconnection())
                 {
-                    string sql = "UPDATE funcionario SET nome = @nome, matricula = @matricula, telefone = @telefone, id_perfil = @id_perfil, armario_id = @armario_id, vestiario_id = @vestiario_id, setor_id = @setor_id WHERE id = @id";
+                    string sql = "UPDATE funcionario SET nome = @nome, telefone = @telefone, armario_id = @armario_id, matricula = @matricula, perfil_id = @perfil_id WHERE id = @id";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@nome", nome ?? string.Empty);
-                        cmd.Parameters.AddWithValue("@matricula", matricula);
                         cmd.Parameters.AddWithValue("@telefone", telefone ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@id_perfil", idPerfil ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@armario_id", armarioId);
-                        cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
-                        cmd.Parameters.AddWithValue("@setor_id", setorId);
+                        cmd.Parameters.AddWithValue("@matricula", matricula);
+                        cmd.Parameters.AddWithValue("@perfil_id", perfilId);
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                     }
