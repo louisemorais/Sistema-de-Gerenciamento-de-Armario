@@ -468,11 +468,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\SistemaArmario.csproj",
+      "projectUniqueName": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario.csproj",
       "projectName": "SistemaArmario",
-      "projectPath": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\SistemaArmario.csproj",
+      "projectPath": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario.csproj",
       "packagesPath": "C:\\Users\\louis\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\obj\\",
+      "outputPath": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\louis\\AppData\\Roaming\\NuGet\\NuGet.Config",

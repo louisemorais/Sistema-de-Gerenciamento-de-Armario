@@ -410,6 +410,64 @@ namespace SistemaArmario
             }
         }
 
+        public static int GetVestiarioIdPorNome(string nomeVestiario)
+        {
+            try
+            {
+                using (var conn = DataBaseconnection())
+                {
+                    string sql = "SELECT id FROM vestiario WHERE vestiario = @nome LIMIT 1";
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@nome", nomeVestiario);
+                        var resultado = cmd.ExecuteScalar();
+
+                        if (resultado == null)
+                            return -1;
+
+                        return Convert.ToInt32(resultado);
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine("Erro buscar vestiário por nome: " + error.Message);
+                return -1;
+            }
+        }
+
+        public static DataTable GetArmariosComStatus(int vestiarioId)
+        {
+            SQLiteDataAdapter adapter = null;
+            DataTable table = new DataTable();
+            try
+            {
+                using (var conn = DataBaseconnection())
+                {
+                    string sql = @"
+                SELECT a.id, a.numero_armario,
+                       CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS ocupado
+                FROM armario a
+                LEFT JOIN funcionario f ON f.armario_id = a.id
+                WHERE a.vestiario_id = @vestiario_id
+                ORDER BY a.numero_armario";
+
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
+                        adapter = new SQLiteDataAdapter(cmd);
+                        adapter.Fill(table);
+                        return table;
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine("Erro selecionar armários com status: " + error.Message);
+                return null;
+            }
+        }
+
         // ========== MÉTODOS CRUD PARA FUNCIONÁRIO ==========
         public static DataTable GetFuncionarios()
         {

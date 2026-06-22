@@ -1,13 +1,29 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\",
+  "WorkspaceRootPath": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{92C7A4F7-CFED-4B6D-A6EC-D9AEADE5C6CB}|SistemaArmario.csproj|c:\\users\\louis\\desktop\\projetointegrador\\sistema-de-gerenciamento-de-armario\\sistemaarmario\\dbarmario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{92C7A4F7-CFED-4B6D-A6EC-D9AEADE5C6CB}|SistemaArmario.csproj|solutionrelative:dbarmario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|c:\\users\\louis\\desktop\\projetointegrador\\sistema-de-gerenciamento-de-armario\\telacadastro.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|solutionrelative:telacadastro.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{92C7A4F7-CFED-4B6D-A6EC-D9AEADE5C6CB}|SistemaArmario.csproj|c:\\users\\louis\\desktop\\projetointegrador\\sistema-de-gerenciamento-de-armario\\sistemaarmario\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "AbsoluteMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|c:\\users\\louis\\desktop\\projetointegrador\\sistema-de-gerenciamento-de-armario\\dbarmario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|solutionrelative:dbarmario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|c:\\users\\louis\\desktop\\projetointegrador\\sistema-de-gerenciamento-de-armario\\telacadastro.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|solutionrelative:telacadastro.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|c:\\users\\louis\\desktop\\projetointegrador\\sistema-de-gerenciamento-de-armario\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|solutionrelative:form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|c:\\users\\louis\\desktop\\projetointegrador\\sistema-de-gerenciamento-de-armario\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|solutionrelative:form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{92C7A4F7-CFED-4B6D-A6EC-D9AEADE5C6CB}|SistemaArmario.csproj|C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{92C7A4F7-CFED-4B6D-A6EC-D9AEADE5C6CB}|SistemaArmario.csproj|solutionrelative:form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     }
   ],
@@ -18,7 +34,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 11,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,28 +42,77 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "TelaCadastro.cs",
+              "DocumentMoniker": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\TelaCadastro.cs",
+              "RelativeDocumentMoniker": "TelaCadastro.cs",
+              "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\TelaCadastro.cs",
+              "RelativeToolTip": "TelaCadastro.cs",
+              "ViewState": "AgIAAEoAAAAAAAAAAAAswBYAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-21T23:49:44.871Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "TelaCadastro.cs [Projeto]",
+              "DocumentMoniker": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\TelaCadastro.cs",
+              "RelativeDocumentMoniker": "TelaCadastro.cs",
+              "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\TelaCadastro.cs [Projeto]",
+              "RelativeToolTip": "TelaCadastro.cs [Projeto]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-21T23:29:23.305Z",
+              "EditorCaption": " [Projeto]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Form1.cs",
+              "DocumentMoniker": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\Form1.cs",
+              "RelativeDocumentMoniker": "Form1.cs",
+              "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\Form1.cs",
+              "RelativeToolTip": "Form1.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAQwCgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-21T23:28:48.44Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "DBArmario.cs",
-              "DocumentMoniker": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\DBArmario.cs",
+              "DocumentMoniker": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\DBArmario.cs",
               "RelativeDocumentMoniker": "DBArmario.cs",
-              "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\DBArmario.cs",
+              "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\DBArmario.cs",
               "RelativeToolTip": "DBArmario.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAJQAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAHABAAAAAAAAAAAQwMEBAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-14T20:15:46.648Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "Form1.cs [Projeto]",
-              "DocumentMoniker": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\Form1.cs",
+              "DocumentMoniker": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\Form1.cs",
               "RelativeDocumentMoniker": "Form1.cs",
-              "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\Form1.cs [Projeto]",
+              "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\Form1.cs [Projeto]",
               "RelativeToolTip": "Form1.cs [Projeto]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-14T20:13:47.708Z",
+              "WhenOpened": "2026-06-21T23:26:08.461Z",
               "EditorCaption": " [Projeto]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Form1.cs [Projeto]",
+              "DocumentMoniker": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\Form1.cs",
+              "RelativeDocumentMoniker": "Form1.cs",
+              "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\SistemaArmario\\Form1.cs [Projeto]",
+              "RelativeToolTip": "SistemaArmario\\Form1.cs [Projeto]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-14T20:13:47.708Z"
             }
           ]
         }
