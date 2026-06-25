@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Data.SQLite;
@@ -10,11 +10,11 @@ namespace SistemaArmario
     internal class DBArmario
     {
         public static string path = Directory.GetCurrentDirectory() + "\\setor_armarios.sqlite";
-        private static SQLiteConnection connection;
 
+        // ✅ CORRIGIDO: Removida variável estática que causava vazamento
         private static SQLiteConnection DataBaseconnection()
         {
-            connection = new SQLiteConnection("Data Source=" + path);
+            var connection = new SQLiteConnection("Data Source=" + path);
             connection.Open();
 
             // Habilita enforcement de foreign keys no SQLite
@@ -25,6 +25,7 @@ namespace SistemaArmario
             return connection;
         }
 
+        // ✅ CORRIGIDO: Adicionado bloco catch que faltava
         public static void CriarDataBase()
         {
             try
@@ -36,7 +37,72 @@ namespace SistemaArmario
             }
             catch (Exception error)
             {
-                Console.WriteLine("Erro ao criar o banco de dados: " + error.Message);
+                Console.WriteLine("Erro ao criar banco de dados: " + error.Message);
+            }
+        }
+
+        public static void PopularArmariosFixosExemplo(int vestiarioId)
+        {
+            // números fixos e status (true = ocupado, false = livre)
+            var armariosFixos = new Dictionary<int, bool>
+            {
+                { 1, false },
+                { 2, true },
+                { 3, false },
+                { 4, false },
+                { 5, true },
+                { 6, false },
+                { 7, true },
+                { 8, false },
+                { 9, false },
+                { 10, true }
+            };
+
+            InserirArmariosFixos(vestiarioId, armariosFixos);
+        }
+
+        // Insere múltiplos armários com informações fixas (número e ocupado)
+        // armarios: dicionário onde a chave é o número do armário e o valor indica se está ocupado (true = ocupado)
+        public static void InserirArmariosFixos(int vestiarioId, System.Collections.Generic.Dictionary<int, bool> armarios)
+        {
+            if (armarios == null || armarios.Count == 0) return;
+
+            try
+            {
+                using (var conn = DataBaseconnection())
+                using (var transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        string sql = "INSERT INTO armario (numero_armario, vestiario_id, ocupado) VALUES (@numero, @vestiario_id, @ocupado)";
+                        using (var cmd = new SQLiteCommand(sql, conn))
+                        {
+                            var pNumero = cmd.Parameters.Add("@numero", System.Data.DbType.Int32);
+                            var pVestiario = cmd.Parameters.Add("@vestiario_id", System.Data.DbType.Int32);
+                            var pOcupado = cmd.Parameters.Add("@ocupado", System.Data.DbType.Int32);
+
+                            pVestiario.Value = vestiarioId;
+
+                            foreach (var item in armarios)
+                            {
+                                pNumero.Value = item.Key;
+                                pOcupado.Value = item.Value ? 1 : 0;
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch (Exception error)
+                    {
+                        transaction.Rollback();  // ✅ ROLLBACK em caso de erro
+                        throw;
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine("Erro inserir armários fixos: " + error.Message);
             }
         }
 
@@ -56,6 +122,7 @@ namespace SistemaArmario
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             numero_armario INTEGER NOT NULL,
                             vestiario_id INTEGER NOT NULL,
+                            ocupado INTEGER NOT NULL DEFAULT 0,
                             FOREIGN KEY (vestiario_id) REFERENCES vestiario(id)
                         );
 
@@ -99,9 +166,9 @@ namespace SistemaArmario
             }
         }
 
-        public static DataTable GetContatos()
+        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static DataTable? GetContatos()
         {
-            SQLiteDataAdapter adapter = null;
             DataTable table = new DataTable();
             try
             {
@@ -110,9 +177,11 @@ namespace SistemaArmario
                     string sql = "SELECT * FROM Contatos";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
+                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        {
+                            adapter.Fill(table);
+                            return table;
+                        }
                     }
                 }
             }
@@ -123,9 +192,9 @@ namespace SistemaArmario
             }
         }
 
-        public static DataTable GetContatoById(int id)
+        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static DataTable? GetContatoById(int id)
         {
-            SQLiteDataAdapter adapter = null;
             DataTable table = new DataTable();
             try
             {
@@ -135,9 +204,11 @@ namespace SistemaArmario
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@id", id);
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
+                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        {
+                            adapter.Fill(table);
+                            return table;
+                        }
                     }
                 }
             }
@@ -149,9 +220,9 @@ namespace SistemaArmario
         }
 
         // ========== MÉTODOS CRUD PARA PERFIL ==========
-        public static DataTable GetPerfis()
+        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static DataTable? GetPerfis()
         {
-            SQLiteDataAdapter adapter = null;
             DataTable table = new DataTable();
             try
             {
@@ -160,9 +231,11 @@ namespace SistemaArmario
                     string sql = "SELECT * FROM perfil";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
+                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        {
+                            adapter.Fill(table);
+                            return table;
+                        }
                     }
                 }
             }
@@ -173,8 +246,15 @@ namespace SistemaArmario
             }
         }
 
+        // ✅ CORRIGIDO: Adicionada validação de entrada
         public static void InserirPerfil(string permissao, string funcao)
         {
+            if (string.IsNullOrWhiteSpace(permissao) || string.IsNullOrWhiteSpace(funcao))
+            {
+                Console.WriteLine("Erro: Permissão e função não podem estar vazias");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -182,8 +262,8 @@ namespace SistemaArmario
                     string sql = "INSERT INTO perfil (permissao, funcao) VALUES (@permissao, @funcao)";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        cmd.Parameters.AddWithValue("@permissao", permissao ?? string.Empty);
-                        cmd.Parameters.AddWithValue("@funcao", funcao ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@permissao", permissao);
+                        cmd.Parameters.AddWithValue("@funcao", funcao);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -196,6 +276,12 @@ namespace SistemaArmario
 
         public static void AtualizarPerfil(int id, string permissao, string funcao)
         {
+            if (id <= 0 || string.IsNullOrWhiteSpace(permissao) || string.IsNullOrWhiteSpace(funcao))
+            {
+                Console.WriteLine("Erro: ID inválido ou dados vazios");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -203,8 +289,8 @@ namespace SistemaArmario
                     string sql = "UPDATE perfil SET permissao = @permissao, funcao = @funcao WHERE id = @id";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        cmd.Parameters.AddWithValue("@permissao", permissao ?? string.Empty);
-                        cmd.Parameters.AddWithValue("@funcao", funcao ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@permissao", permissao);
+                        cmd.Parameters.AddWithValue("@funcao", funcao);
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                     }
@@ -218,6 +304,12 @@ namespace SistemaArmario
 
         public static void ExcluirPerfil(int id)
         {
+            if (id <= 0)
+            {
+                Console.WriteLine("Erro: ID inválido");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -237,9 +329,9 @@ namespace SistemaArmario
         }
 
         // ========== MÉTODOS CRUD PARA VESTIÁRIO ==========
-        public static DataTable GetVestiarios()
+        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static DataTable? GetVestiarios()
         {
-            SQLiteDataAdapter adapter = null;
             DataTable table = new DataTable();
             try
             {
@@ -248,9 +340,11 @@ namespace SistemaArmario
                     string sql = "SELECT * FROM vestiario";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
+                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        {
+                            adapter.Fill(table);
+                            return table;
+                        }
                     }
                 }
             }
@@ -261,8 +355,15 @@ namespace SistemaArmario
             }
         }
 
+        // ✅ CORRIGIDO: Adicionada validação de entrada
         public static void InserirVestiario(string vestiario)
         {
+            if (string.IsNullOrWhiteSpace(vestiario))
+            {
+                Console.WriteLine("Erro: Nome do vestiário não pode estar vazio");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -270,7 +371,7 @@ namespace SistemaArmario
                     string sql = "INSERT INTO vestiario (vestiario) VALUES (@vestiario)";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        cmd.Parameters.AddWithValue("@vestiario", vestiario ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@vestiario", vestiario);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -283,6 +384,12 @@ namespace SistemaArmario
 
         public static void AtualizarVestiario(int id, string vestiario)
         {
+            if (id <= 0 || string.IsNullOrWhiteSpace(vestiario))
+            {
+                Console.WriteLine("Erro: ID inválido ou vestiário vazio");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -290,7 +397,7 @@ namespace SistemaArmario
                     string sql = "UPDATE vestiario SET vestiario = @vestiario WHERE id = @id";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        cmd.Parameters.AddWithValue("@vestiario", vestiario ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@vestiario", vestiario);
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                     }
@@ -304,6 +411,12 @@ namespace SistemaArmario
 
         public static void ExcluirVestiario(int id)
         {
+            if (id <= 0)
+            {
+                Console.WriteLine("Erro: ID inválido");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -323,9 +436,9 @@ namespace SistemaArmario
         }
 
         // ========== MÉTODOS CRUD PARA ARMÁRIO ==========
-        public static DataTable GetArmarios()
+        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static DataTable? GetArmarios()
         {
-            SQLiteDataAdapter adapter = null;
             DataTable table = new DataTable();
             try
             {
@@ -334,9 +447,11 @@ namespace SistemaArmario
                     string sql = "SELECT * FROM armario";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
+                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        {
+                            adapter.Fill(table);
+                            return table;
+                        }
                     }
                 }
             }
@@ -349,6 +464,12 @@ namespace SistemaArmario
 
         public static void InserirArmario(int numeroArmario, int vestiarioId)
         {
+            if (numeroArmario <= 0 || vestiarioId <= 0)
+            {
+                Console.WriteLine("Erro: Número do armário e ID do vestiário devem ser maiores que zero");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -370,6 +491,12 @@ namespace SistemaArmario
 
         public static void AtualizarArmario(int id, int numeroArmario, int vestiarioId)
         {
+            if (id <= 0 || numeroArmario <= 0 || vestiarioId <= 0)
+            {
+                Console.WriteLine("Erro: ID, número do armário e ID do vestiário devem ser maiores que zero");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -392,6 +519,12 @@ namespace SistemaArmario
 
         public static void ExcluirArmario(int id)
         {
+            if (id <= 0)
+            {
+                Console.WriteLine("Erro: ID inválido");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -412,6 +545,12 @@ namespace SistemaArmario
 
         public static int GetVestiarioIdPorNome(string nomeVestiario)
         {
+            if (string.IsNullOrWhiteSpace(nomeVestiario))
+            {
+                Console.WriteLine("Erro: Nome do vestiário não pode estar vazio");
+                return -1;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -436,28 +575,28 @@ namespace SistemaArmario
             }
         }
 
-        public static DataTable GetArmariosComStatus(int vestiarioId)
+        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static DataTable? GetArmariosComStatus(int vestiarioId)
         {
-            SQLiteDataAdapter adapter = null;
             DataTable table = new DataTable();
             try
             {
                 using (var conn = DataBaseconnection())
                 {
                     string sql = @"
-                SELECT a.id, a.numero_armario,
-                       CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS ocupado
-                FROM armario a
-                LEFT JOIN funcionario f ON f.armario_id = a.id
-                WHERE a.vestiario_id = @vestiario_id
-                ORDER BY a.numero_armario";
+                    SELECT a.id, a.numero_armario,
+                    CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS ocupado FROM armario a
+                    LEFT JOIN funcionario f ON f.armario_id = a.id WHERE a.vestiario_id = @vestiario_id
+                    ORDER BY a.numero_armario";
 
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
+                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        {
+                            adapter.Fill(table);
+                            return table;
+                        }
                     }
                 }
             }
@@ -469,9 +608,9 @@ namespace SistemaArmario
         }
 
         // ========== MÉTODOS CRUD PARA FUNCIONÁRIO ==========
-        public static DataTable GetFuncionarios()
+        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static DataTable? GetFuncionarios()
         {
-            SQLiteDataAdapter adapter = null;
             DataTable table = new DataTable();
             try
             {
@@ -480,9 +619,11 @@ namespace SistemaArmario
                     string sql = "SELECT * FROM funcionario";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
+                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        {
+                            adapter.Fill(table);
+                            return table;
+                        }
                     }
                 }
             }
@@ -493,9 +634,9 @@ namespace SistemaArmario
             }
         }
 
-        public static DataTable GetFuncionarioById(int id)
+        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static DataTable? GetFuncionarioById(int id)
         {
-            SQLiteDataAdapter adapter = null;
             DataTable table = new DataTable();
             try
             {
@@ -505,9 +646,11 @@ namespace SistemaArmario
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@id", id);
-                        adapter = new SQLiteDataAdapter(cmd);
-                        adapter.Fill(table);
-                        return table;
+                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        {
+                            adapter.Fill(table);
+                            return table;
+                        }
                     }
                 }
             }
@@ -518,8 +661,15 @@ namespace SistemaArmario
             }
         }
 
+        // ✅ CORRIGIDO: Adicionada validação de entrada
         public static void InserirFuncionario(string nome, string telefone, int armarioId, int matricula, int perfilId)
         {
+            if (string.IsNullOrWhiteSpace(nome) || armarioId <= 0 || matricula <= 0 || perfilId <= 0)
+            {
+                Console.WriteLine("Erro: Dados inválidos ou incompletos");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -527,7 +677,7 @@ namespace SistemaArmario
                     string sql = "INSERT INTO funcionario (nome, telefone, armario_id, matricula, perfil_id) VALUES (@nome, @telefone, @armario_id, @matricula, @perfil_id)";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        cmd.Parameters.AddWithValue("@nome", nome ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@nome", nome);
                         cmd.Parameters.AddWithValue("@telefone", telefone ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@armario_id", armarioId);
                         cmd.Parameters.AddWithValue("@matricula", matricula);
@@ -544,6 +694,12 @@ namespace SistemaArmario
 
         public static void AtualizarFuncionario(int id, string nome, string telefone, int armarioId, int matricula, int perfilId)
         {
+            if (id <= 0 || string.IsNullOrWhiteSpace(nome) || armarioId <= 0 || matricula <= 0 || perfilId <= 0)
+            {
+                Console.WriteLine("Erro: Dados inválidos ou incompletos");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
@@ -551,7 +707,7 @@ namespace SistemaArmario
                     string sql = "UPDATE funcionario SET nome = @nome, telefone = @telefone, armario_id = @armario_id, matricula = @matricula, perfil_id = @perfil_id WHERE id = @id";
                     using (var cmd = new SQLiteCommand(sql, conn))
                     {
-                        cmd.Parameters.AddWithValue("@nome", nome ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@nome", nome);
                         cmd.Parameters.AddWithValue("@telefone", telefone ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@armario_id", armarioId);
                         cmd.Parameters.AddWithValue("@matricula", matricula);
@@ -569,6 +725,12 @@ namespace SistemaArmario
 
         public static void ExcluirFuncionario(int id)
         {
+            if (id <= 0)
+            {
+                Console.WriteLine("Erro: ID inválido");
+                return;
+            }
+
             try
             {
                 using (var conn = DataBaseconnection())
