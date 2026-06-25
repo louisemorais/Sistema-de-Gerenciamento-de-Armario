@@ -1,4 +1,4 @@
-﻿namespace SistemaArmario
+namespace SistemaArmario
 {
     partial class Form1
     {
