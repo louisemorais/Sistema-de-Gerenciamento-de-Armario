@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -11,7 +11,7 @@ namespace SistemaArmario
     public partial class TelaCadastro : Form
     {
         private int armarioSelecionadoId = -1;
-        private Button botaoSelecionado = null;
+        private Button? botaoSelecionado;  // ✅ Nullable explícito
 
         public TelaCadastro()
         {
@@ -52,9 +52,14 @@ namespace SistemaArmario
             botaoSelecionado = null;
             BackgroundArmario.Controls.Clear();
 
-            DataTable armarios = DBArmario.GetArmariosComStatus(vestiarioId);
+            DataTable? armarios = DBArmario.GetArmariosComStatus(vestiarioId);
 
-            if (armarios == null) return;
+            if (armarios == null || armarios.Rows.Count == 0)
+            {
+                MessageBox.Show("Nenhum armário disponível para este vestiário.", "Aviso", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
             foreach (DataRow linha in armarios.Rows)
             {
@@ -88,7 +93,11 @@ namespace SistemaArmario
 
         private void BtnArmario_Click(object sender, EventArgs e)
         {
-            Button btnClicado = (Button)sender;
+            if (sender is not Button btnClicado)
+            {
+                MessageBox.Show("Erro ao selecionar armário.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             if (botaoSelecionado != null)
             {
@@ -99,7 +108,10 @@ namespace SistemaArmario
             btnClicado.ForeColor = Color.White;
 
             botaoSelecionado = btnClicado;
-            armarioSelecionadoId = (int)btnClicado.Tag;
+            if (btnClicado.Tag is int tagId)
+            {
+                armarioSelecionadoId = tagId;
+            }
         }
 
         private void CampoNome_TextChanged(object sender, EventArgs e)
