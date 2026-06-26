@@ -1,109 +1,40 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Data.SQLite;
 using System.Data;
 using System.IO;
+using System.Windows.Forms;
+using Microsoft.Data.Sqlite;
 
 namespace SistemaArmario
 {
     internal class DBArmario
     {
-        public static string path = Directory.GetCurrentDirectory() + "\\setor_armarios.sqlite";
+        public static string path = Path.Combine(Directory.GetCurrentDirectory(), "setor_armarios.sqlite");
 
-        // ✅ CORRIGIDO: Removida variável estática que causava vazamento
-        private static SQLiteConnection DataBaseconnection()
+        private static SqliteConnection DataBaseconnection()
         {
-            var connection = new SQLiteConnection("Data Source=" + path);
+            var connection = new SqliteConnection($"Data Source={path}");
             connection.Open();
 
-            // Habilita enforcement de foreign keys no SQLite
-            using (var cmd = new SQLiteCommand("PRAGMA foreign_keys = ON;", connection))
+            using (var cmd = connection.CreateCommand())
             {
+                cmd.CommandText = "PRAGMA foreign_keys = ON;";
                 cmd.ExecuteNonQuery();
             }
+
             return connection;
         }
 
-        // ✅ CORRIGIDO: Adicionado bloco catch que faltava
+        // =============================================
+        // CRIAÇÃO DO BANCO
+        // =============================================
+
         public static void CriarDataBase()
         {
-            try
-            {
-                if (!File.Exists(path))
-                {
-                    SQLiteConnection.CreateFile(path);
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro ao criar banco de dados: " + error.Message);
-            }
-        }
-
-        public static void PopularArmariosFixosExemplo(int vestiarioId)
-        {
-            // números fixos e status (true = ocupado, false = livre)
-            var armariosFixos = new Dictionary<int, bool>
-            {
-                { 1, false },
-                { 2, true },
-                { 3, false },
-                { 4, false },
-                { 5, true },
-                { 6, false },
-                { 7, true },
-                { 8, false },
-                { 9, false },
-                { 10, true }
-            };
-
-            InserirArmariosFixos(vestiarioId, armariosFixos);
-        }
-
-        // Insere múltiplos armários com informações fixas (número e ocupado)
-        // armarios: dicionário onde a chave é o número do armário e o valor indica se está ocupado (true = ocupado)
-        public static void InserirArmariosFixos(int vestiarioId, System.Collections.Generic.Dictionary<int, bool> armarios)
-        {
-            if (armarios == null || armarios.Count == 0) return;
-
-            try
-            {
-                using (var conn = DataBaseconnection())
-                using (var transaction = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        string sql = "INSERT INTO armario (numero_armario, vestiario_id, ocupado) VALUES (@numero, @vestiario_id, @ocupado)";
-                        using (var cmd = new SQLiteCommand(sql, conn))
-                        {
-                            var pNumero = cmd.Parameters.Add("@numero", System.Data.DbType.Int32);
-                            var pVestiario = cmd.Parameters.Add("@vestiario_id", System.Data.DbType.Int32);
-                            var pOcupado = cmd.Parameters.Add("@ocupado", System.Data.DbType.Int32);
-
-                            pVestiario.Value = vestiarioId;
-
-                            foreach (var item in armarios)
-                            {
-                                pNumero.Value = item.Key;
-                                pOcupado.Value = item.Value ? 1 : 0;
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-
-                        transaction.Commit();
-                    }
-                    catch (Exception error)
-                    {
-                        transaction.Rollback();  // ✅ ROLLBACK em caso de erro
-                        throw;
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro inserir armários fixos: " + error.Message);
-            }
+            // Microsoft.Data.Sqlite cria o arquivo automaticamente ao abrir conexão.
+            // Apenas garante que o diretório existe.
+            string? dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
         }
 
         public static void CriarTabela()
@@ -112,642 +43,381 @@ namespace SistemaArmario
             {
                 using (var conn = DataBaseconnection())
                 {
-                    string sql = @"
-                        CREATE TABLE IF NOT EXISTS vestiario (
+                    // Cada CREATE TABLE precisa de um comando separado no Microsoft.Data.Sqlite
+                    string[] sqls = {
+                        @"CREATE TABLE IF NOT EXISTS vestiario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             vestiario TEXT NOT NULL
-                        );
-
-                        CREATE TABLE IF NOT EXISTS armario (
+                        );",
+                        @"CREATE TABLE IF NOT EXISTS armario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             numero_armario INTEGER NOT NULL,
                             vestiario_id INTEGER NOT NULL,
                             ocupado INTEGER NOT NULL DEFAULT 0,
                             FOREIGN KEY (vestiario_id) REFERENCES vestiario(id)
-                        );
-
-                        CREATE INDEX IF NOT EXISTS idx_armario_vestiario_id ON armario (vestiario_id);
-
-                        CREATE TABLE IF NOT EXISTS perfil (
+                        );",
+                        "CREATE INDEX IF NOT EXISTS idx_armario_vestiario_id ON armario (vestiario_id);",
+                        @"CREATE TABLE IF NOT EXISTS perfil (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            permissao TEXT NOT NULL,
+                            permissao TEXT NOT NULL UNIQUE,
                             funcao TEXT NOT NULL
-                        );
-
-                        CREATE TABLE IF NOT EXISTS funcionario (
+                        );",
+                        @"CREATE TABLE IF NOT EXISTS funcionario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             nome TEXT NOT NULL,
-                            telefone TEXT UNIQUE,
+                            telefone TEXT,
                             armario_id INTEGER NOT NULL,
-                            matricula INTEGER NOT NULL,
+                            matricula INTEGER NOT NULL UNIQUE,
                             perfil_id INTEGER NOT NULL,
                             FOREIGN KEY (armario_id) REFERENCES armario(id),
                             FOREIGN KEY (perfil_id) REFERENCES perfil(id)
-                        );
+                        );",
+                        "CREATE INDEX IF NOT EXISTS idx_funcionario_armario_id ON funcionario (armario_id);",
+                        "CREATE INDEX IF NOT EXISTS idx_funcionario_perfil_id ON funcionario (perfil_id);"
+                    };
 
-                        CREATE INDEX IF NOT EXISTS idx_funcionario_armario_id ON funcionario (armario_id);
-                        CREATE INDEX IF NOT EXISTS idx_funcionario_perfil_id ON funcionario (perfil_id);
-
-                        CREATE TABLE IF NOT EXISTS Contatos (
-                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            Nome TEXT NOT NULL,
-                            Telefone TEXT
-                        );
-                    ";
-                    using (var cmd = new SQLiteCommand(sql, conn))
+                    foreach (var sql in sqls)
                     {
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro ao criar a tabela: " + error.Message);
-            }
-        }
-
-        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
-        public static DataTable? GetContatos()
-        {
-            DataTable table = new DataTable();
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "SELECT * FROM Contatos";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        using (var cmd = connection.CreateCommand())
                         {
-                            adapter.Fill(table);
-                            return table;
+                            cmd.Connection = conn;
+                            cmd.CommandText = sql;
+                            cmd.ExecuteNonQuery();
                         }
                     }
                 }
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro selecionar dados: " + error.Message);
-                return null;
+                Console.WriteLine("Erro ao criar tabelas: " + ex.Message);
+                throw;
             }
         }
 
-        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
-        public static DataTable? GetContatoById(int id)
-        {
-            DataTable table = new DataTable();
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "SELECT * FROM Contatos WHERE Id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@id", id);
-                        using (var adapter = new SQLiteDataAdapter(cmd))
-                        {
-                            adapter.Fill(table);
-                            return table;
-                        }
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro selecionar dado: " + error.Message);
-                return null;
-            }
-        }
+        // =============================================
+        // PERFIL
+        // =============================================
 
-        // ========== MÉTODOS CRUD PARA PERFIL ==========
-        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
         public static DataTable? GetPerfis()
         {
-            DataTable table = new DataTable();
+            return ExecutarQuery("SELECT * FROM perfil");
+        }
+
+        public static void CriarPerfisPadrao()
+        {
             try
             {
                 using (var conn = DataBaseconnection())
                 {
-                    string sql = "SELECT * FROM perfil";
-                    using (var cmd = new SQLiteCommand(sql, conn))
+                    string[] sqls = {
+                        "INSERT OR IGNORE INTO perfil (permissao, funcao) VALUES ('ADMIN', 'Administrador');",
+                        "INSERT OR IGNORE INTO perfil (permissao, funcao) VALUES ('USER', 'Funcionário');"
+                    };
+
+                    foreach (var sql in sqls)
                     {
-                        using (var adapter = new SQLiteDataAdapter(cmd))
+                        using (var cmd = conn.CreateCommand())
                         {
-                            adapter.Fill(table);
-                            return table;
+                            cmd.CommandText = sql;
+                            cmd.ExecuteNonQuery();
                         }
                     }
                 }
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro selecionar perfis: " + error.Message);
-                return null;
+                Console.WriteLine("Erro ao criar perfis: " + ex.Message);
             }
         }
 
-        // ✅ CORRIGIDO: Adicionada validação de entrada
-        public static void InserirPerfil(string permissao, string funcao)
-        {
-            if (string.IsNullOrWhiteSpace(permissao) || string.IsNullOrWhiteSpace(funcao))
-            {
-                Console.WriteLine("Erro: Permissão e função não podem estar vazias");
-                return;
-            }
+        // =============================================
+        // VESTIÁRIO
+        // =============================================
 
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "INSERT INTO perfil (permissao, funcao) VALUES (@permissao, @funcao)";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@permissao", permissao);
-                        cmd.Parameters.AddWithValue("@funcao", funcao);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro inserir perfil: " + error.Message);
-            }
-        }
-
-        public static void AtualizarPerfil(int id, string permissao, string funcao)
-        {
-            if (id <= 0 || string.IsNullOrWhiteSpace(permissao) || string.IsNullOrWhiteSpace(funcao))
-            {
-                Console.WriteLine("Erro: ID inválido ou dados vazios");
-                return;
-            }
-
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "UPDATE perfil SET permissao = @permissao, funcao = @funcao WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@permissao", permissao);
-                        cmd.Parameters.AddWithValue("@funcao", funcao);
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro atualizar perfil: " + error.Message);
-            }
-        }
-
-        public static void ExcluirPerfil(int id)
-        {
-            if (id <= 0)
-            {
-                Console.WriteLine("Erro: ID inválido");
-                return;
-            }
-
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "DELETE FROM perfil WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro deletar perfil: " + error.Message);
-            }
-        }
-
-        // ========== MÉTODOS CRUD PARA VESTIÁRIO ==========
-        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
         public static DataTable? GetVestiarios()
         {
-            DataTable table = new DataTable();
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "SELECT * FROM vestiario";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        using (var adapter = new SQLiteDataAdapter(cmd))
-                        {
-                            adapter.Fill(table);
-                            return table;
-                        }
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro selecionar vestiários: " + error.Message);
-                return null;
-            }
+            return ExecutarQuery("SELECT * FROM vestiario");
         }
 
-        // ✅ CORRIGIDO: Adicionada validação de entrada
-        public static void InserirVestiario(string vestiario)
+        public static void InserirVestiario(string nome)
         {
-            if (string.IsNullOrWhiteSpace(vestiario))
-            {
-                Console.WriteLine("Erro: Nome do vestiário não pode estar vazio");
-                return;
-            }
+            if (string.IsNullOrWhiteSpace(nome)) return;
 
             try
             {
                 using (var conn = DataBaseconnection())
+                using (var cmd = conn.CreateCommand())
                 {
-                    string sql = "INSERT INTO vestiario (vestiario) VALUES (@vestiario)";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@vestiario", vestiario);
-                        cmd.ExecuteNonQuery();
-                    }
+                    cmd.CommandText = "INSERT OR IGNORE INTO vestiario (vestiario) VALUES (@nome)";
+                    cmd.Parameters.AddWithValue("@nome", nome);
+                    cmd.ExecuteNonQuery();
                 }
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro inserir vestiário: " + error.Message);
+                Console.WriteLine("Erro ao inserir vestiário: " + ex.Message);
             }
         }
 
-        public static void AtualizarVestiario(int id, string vestiario)
+        public static int GetVestiarioIdPorNome(string nome)
         {
-            if (id <= 0 || string.IsNullOrWhiteSpace(vestiario))
-            {
-                Console.WriteLine("Erro: ID inválido ou vestiário vazio");
-                return;
-            }
-
             try
             {
                 using (var conn = DataBaseconnection())
+                using (var cmd = conn.CreateCommand())
                 {
-                    string sql = "UPDATE vestiario SET vestiario = @vestiario WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@vestiario", vestiario);
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
+                    cmd.CommandText = "SELECT id FROM vestiario WHERE vestiario = @nome LIMIT 1";
+                    cmd.Parameters.AddWithValue("@nome", nome);
+                    var resultado = cmd.ExecuteScalar();
+                    return resultado == null ? -1 : Convert.ToInt32(resultado);
                 }
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro atualizar vestiário: " + error.Message);
+                Console.WriteLine("Erro ao buscar vestiário: " + ex.Message);
+                return -1;
             }
         }
 
-        public static void ExcluirVestiario(int id)
-        {
-            if (id <= 0)
-            {
-                Console.WriteLine("Erro: ID inválido");
-                return;
-            }
+        // =============================================
+        // ARMÁRIO
+        // =============================================
 
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "DELETE FROM vestiario WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro deletar vestiário: " + error.Message);
-            }
-        }
-
-        // ========== MÉTODOS CRUD PARA ARMÁRIO ==========
-        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
         public static DataTable? GetArmarios()
         {
-            DataTable table = new DataTable();
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "SELECT * FROM armario";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        using (var adapter = new SQLiteDataAdapter(cmd))
-                        {
-                            adapter.Fill(table);
-                            return table;
-                        }
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro selecionar armários: " + error.Message);
-                return null;
-            }
+            return ExecutarQuery("SELECT * FROM armario");
         }
 
-        public static void InserirArmario(int numeroArmario, int vestiarioId)
-        {
-            if (numeroArmario <= 0 || vestiarioId <= 0)
-            {
-                Console.WriteLine("Erro: Número do armário e ID do vestiário devem ser maiores que zero");
-                return;
-            }
-
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "INSERT INTO armario (numero_armario, vestiario_id) VALUES (@numero_armario, @vestiario_id)";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@numero_armario", numeroArmario);
-                        cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro inserir armário: " + error.Message);
-            }
-        }
-
-        public static void AtualizarArmario(int id, int numeroArmario, int vestiarioId)
-        {
-            if (id <= 0 || numeroArmario <= 0 || vestiarioId <= 0)
-            {
-                Console.WriteLine("Erro: ID, número do armário e ID do vestiário devem ser maiores que zero");
-                return;
-            }
-
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "UPDATE armario SET numero_armario = @numero_armario, vestiario_id = @vestiario_id WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@numero_armario", numeroArmario);
-                        cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro atualizar armário: " + error.Message);
-            }
-        }
-
-        public static void ExcluirArmario(int id)
-        {
-            if (id <= 0)
-            {
-                Console.WriteLine("Erro: ID inválido");
-                return;
-            }
-
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "DELETE FROM armario WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro deletar armário: " + error.Message);
-            }
-        }
-
-        public static int GetVestiarioIdPorNome(string nomeVestiario)
-        {
-            if (string.IsNullOrWhiteSpace(nomeVestiario))
-            {
-                Console.WriteLine("Erro: Nome do vestiário não pode estar vazio");
-                return -1;
-            }
-
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "SELECT id FROM vestiario WHERE vestiario = @nome LIMIT 1";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@nome", nomeVestiario);
-                        var resultado = cmd.ExecuteScalar();
-
-                        if (resultado == null)
-                            return -1;
-
-                        return Convert.ToInt32(resultado);
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro buscar vestiário por nome: " + error.Message);
-                return -1;
-            }
-        }
-
-        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
         public static DataTable? GetArmariosComStatus(int vestiarioId)
         {
-            DataTable table = new DataTable();
             try
             {
                 using (var conn = DataBaseconnection())
+                using (var cmd = conn.CreateCommand())
                 {
-                    string sql = @"
-                    SELECT a.id, a.numero_armario,
-                    CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS ocupado FROM armario a
-                    LEFT JOIN funcionario f ON f.armario_id = a.id WHERE a.vestiario_id = @vestiario_id
-                    ORDER BY a.numero_armario";
+                    cmd.CommandText = @"
+                        SELECT a.id, a.numero_armario,
+                               CASE WHEN f.id IS NULL THEN 0 ELSE 1 END AS ocupado
+                        FROM armario a
+                        LEFT JOIN funcionario f ON f.armario_id = a.id
+                        WHERE a.vestiario_id = @vestiario_id
+                        ORDER BY a.numero_armario";
 
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
-                        using (var adapter = new SQLiteDataAdapter(cmd))
-                        {
-                            adapter.Fill(table);
-                            return table;
-                        }
-                    }
+                    cmd.Parameters.AddWithValue("@vestiario_id", vestiarioId);
+
+                    var table = new DataTable();
+                    using (var reader = cmd.ExecuteReader())
+                        table.Load(reader);
+
+                    return table;
                 }
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro selecionar armários com status: " + error.Message);
+                Console.WriteLine("Erro ao buscar armários: " + ex.Message);
                 return null;
             }
         }
 
-        // ========== MÉTODOS CRUD PARA FUNCIONÁRIO ==========
-        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
+        public static void PopularArmariosFixosExemplo(int vestiarioId)
+        {
+            var armarios = new Dictionary<int, bool>
+            {
+                { 1, false }, { 2, false }, { 3, false }, { 4, false }, { 5, false },
+                { 6, false }, { 7, false }, { 8, false }, { 9, false }, { 10, false }
+            };
+
+            try
+            {
+                using (var conn = DataBaseconnection())
+                using (var transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.CommandText = "INSERT OR IGNORE INTO armario (numero_armario, vestiario_id, ocupado) VALUES (@num, @vid, @ocu)";
+                            cmd.Transaction = transaction;
+
+                            var pNum = cmd.Parameters.Add("@num", SqliteType.Integer);
+                            var pVid = cmd.Parameters.Add("@vid", SqliteType.Integer);
+                            var pOcu = cmd.Parameters.Add("@ocu", SqliteType.Integer);
+
+                            pVid.Value = vestiarioId;
+
+                            foreach (var item in armarios)
+                            {
+                                pNum.Value = item.Key;
+                                pOcu.Value = item.Value ? 1 : 0;
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro ao popular armários: " + ex.Message);
+            }
+        }
+
+        // =============================================
+        // FUNCIONÁRIO
+        // =============================================
+
         public static DataTable? GetFuncionarios()
         {
-            DataTable table = new DataTable();
-            try
-            {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "SELECT * FROM funcionario";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        using (var adapter = new SQLiteDataAdapter(cmd))
-                        {
-                            adapter.Fill(table);
-                            return table;
-                        }
-                    }
-                }
-            }
-            catch (Exception error)
-            {
-                Console.WriteLine("Erro selecionar funcionários: " + error.Message);
-                return null;
-            }
+            return ExecutarQuery("SELECT * FROM funcionario");
         }
 
-        // ✅ CORRIGIDO: DataAdapter agora está dentro de using()
         public static DataTable? GetFuncionarioById(int id)
         {
-            DataTable table = new DataTable();
             try
             {
                 using (var conn = DataBaseconnection())
+                using (var cmd = conn.CreateCommand())
                 {
-                    string sql = "SELECT * FROM funcionario WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@id", id);
-                        using (var adapter = new SQLiteDataAdapter(cmd))
-                        {
-                            adapter.Fill(table);
-                            return table;
-                        }
-                    }
+                    cmd.CommandText = @"
+                        SELECT f.id, f.nome, f.telefone, f.matricula,
+                               a.numero_armario, v.vestiario
+                        FROM funcionario f
+                        INNER JOIN armario a ON a.id = f.armario_id
+                        INNER JOIN vestiario v ON v.id = a.vestiario_id
+                        WHERE f.id = @id";
+
+                    cmd.Parameters.AddWithValue("@id", id);
+
+                    var table = new DataTable();
+                    using (var reader = cmd.ExecuteReader())
+                        table.Load(reader);
+
+                    return table;
                 }
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro selecionar funcionário: " + error.Message);
+                Console.WriteLine("Erro ao buscar funcionário: " + ex.Message);
                 return null;
             }
         }
 
-        // ✅ CORRIGIDO: Adicionada validação de entrada
-        public static void InserirFuncionario(string nome, string telefone, int armarioId, int matricula, int perfilId)
+        public static void InserirFuncionario(string nome, string? telefone, int armarioId, int matricula, int perfilId)
         {
             if (string.IsNullOrWhiteSpace(nome) || armarioId <= 0 || matricula <= 0 || perfilId <= 0)
-            {
-                Console.WriteLine("Erro: Dados inválidos ou incompletos");
                 return;
-            }
 
             try
             {
                 using (var conn = DataBaseconnection())
+                using (var cmd = conn.CreateCommand())
                 {
-                    string sql = "INSERT INTO funcionario (nome, telefone, armario_id, matricula, perfil_id) VALUES (@nome, @telefone, @armario_id, @matricula, @perfil_id)";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@nome", nome);
-                        cmd.Parameters.AddWithValue("@telefone", telefone ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@armario_id", armarioId);
-                        cmd.Parameters.AddWithValue("@matricula", matricula);
-                        cmd.Parameters.AddWithValue("@perfil_id", perfilId);
-                        cmd.ExecuteNonQuery();
-                    }
+                    cmd.CommandText = @"
+                        INSERT INTO funcionario (nome, telefone, armario_id, matricula, perfil_id)
+                        VALUES (@nome, @telefone, @armario_id, @matricula, @perfil_id)";
+
+                    cmd.Parameters.AddWithValue("@nome", nome);
+                    cmd.Parameters.AddWithValue("@telefone", (object?)telefone ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@armario_id", armarioId);
+                    cmd.Parameters.AddWithValue("@matricula", matricula);
+                    cmd.Parameters.AddWithValue("@perfil_id", perfilId);
+                    cmd.ExecuteNonQuery();
                 }
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro inserir funcionário: " + error.Message);
+                Console.WriteLine("Erro ao inserir funcionário: " + ex.Message);
+                throw; // Repassa para a tela tratar e mostrar mensagem adequada
             }
         }
 
-        public static void AtualizarFuncionario(int id, string nome, string telefone, int armarioId, int matricula, int perfilId)
+        // =============================================
+        // LOGIN
+        // =============================================
+
+        public static DataTable? LoginPorMatricula(int matricula)
         {
-            if (id <= 0 || string.IsNullOrWhiteSpace(nome) || armarioId <= 0 || matricula <= 0 || perfilId <= 0)
-            {
-                Console.WriteLine("Erro: Dados inválidos ou incompletos");
-                return;
-            }
-
             try
             {
                 using (var conn = DataBaseconnection())
+                using (var cmd = conn.CreateCommand())
                 {
-                    string sql = "UPDATE funcionario SET nome = @nome, telefone = @telefone, armario_id = @armario_id, matricula = @matricula, perfil_id = @perfil_id WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@nome", nome);
-                        cmd.Parameters.AddWithValue("@telefone", telefone ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@armario_id", armarioId);
-                        cmd.Parameters.AddWithValue("@matricula", matricula);
-                        cmd.Parameters.AddWithValue("@perfil_id", perfilId);
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
+                    cmd.CommandText = @"
+                        SELECT f.id, f.nome, f.telefone, f.armario_id, f.matricula, p.permissao
+                        FROM funcionario f
+                        INNER JOIN perfil p ON p.id = f.perfil_id
+                        WHERE f.matricula = @matricula";
+
+                    cmd.Parameters.AddWithValue("@matricula", matricula);
+
+                    var table = new DataTable();
+                    using (var reader = cmd.ExecuteReader())
+                        table.Load(reader);
+
+                    return table;
                 }
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro atualizar funcionário: " + error.Message);
+                MessageBox.Show("Erro ao fazer login: " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
             }
         }
 
-        public static void ExcluirFuncionario(int id)
+        // =============================================
+        // DADOS DE TESTE (só popula se vazio)
+        // =============================================
+
+        public static void PopularDadosTeste()
         {
-            if (id <= 0)
-            {
-                Console.WriteLine("Erro: ID inválido");
-                return;
-            }
-
             try
             {
-                using (var conn = DataBaseconnection())
-                {
-                    string sql = "DELETE FROM funcionario WHERE id = @id";
-                    using (var cmd = new SQLiteCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
+                // Só insere se não houver funcionários
+                var funcionarios = GetFuncionarios();
+                if (funcionarios != null && funcionarios.Rows.Count > 0)
+                    return;
+
+                // ADMIN: matrícula 1111, armário 1 (feminino)
+                InserirFuncionario("Administrador", null, 1, 1111, 1);
+
+                // USER: matrícula 2222, armário 2 (feminino)
+                InserirFuncionario("Funcionário Teste", null, 2, 2222, 2);
             }
-            catch (Exception error)
+            catch (Exception ex)
             {
-                Console.WriteLine("Erro deletar funcionário: " + error.Message);
+                Console.WriteLine("Erro ao popular dados de teste: " + ex.Message);
             }
         }
 
+        // =============================================
+        // AUXILIAR INTERNO
+        // =============================================
+
+        private static DataTable? ExecutarQuery(string sql)
+        {
+            try
+            {
+                using (var conn = DataBaseconnection())
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = sql;
+                    var table = new DataTable();
+                    using (var reader = cmd.ExecuteReader())
+                        table.Load(reader);
+                    return table;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao executar query: {ex.Message}");
+                return null;
+            }
+        }
     }
 }

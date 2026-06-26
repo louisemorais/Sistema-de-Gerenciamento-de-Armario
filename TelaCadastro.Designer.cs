@@ -140,6 +140,7 @@ namespace SistemaArmario
             Controls.Add(CampoNome);
             Controls.Add(labelNome);
             Name = "TelaCadastro";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "TelaCadastro";
             Load += TelaCadastro_Load;
             ResumeLayout(false);

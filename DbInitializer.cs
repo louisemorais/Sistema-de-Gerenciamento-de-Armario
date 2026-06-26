@@ -1,36 +1,18 @@
 using System;
-using System.Collections.Generic;
 
 namespace SistemaArmario
 {
-    /// <summary>
-    /// Inicializa o banco de dados com estrutura e dados padrão
-    /// </summary>
     internal static class DbInitializer
     {
         public static void Inicializar()
         {
-            try
-            {
-                // 1. Criar o arquivo do banco de dados
-                DBArmario.CriarDataBase();
+            // 1. Garante que o arquivo do banco existe
+            DBArmario.CriarDataBase();
 
-                // 2. Criar as tabelas
-                DBArmario.CriarTabela();
+            // 2. Cria as tabelas (CREATE IF NOT EXISTS — seguro rodar sempre)
+            DBArmario.CriarTabela();
 
-                // 3. Inserir dados padrão (vestiários e perfis)
-                InserirDadosPadroes();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Erro ao inicializar banco de dados: {ex.Message}");
-                throw;
-            }
-        }
-
-        private static void InserirDadosPadroes()
-        {
-            // Inserir vestiários padrão se não existirem
+            // 3. Insere vestiários padrão se não existirem
             var vestiarios = DBArmario.GetVestiarios();
             if (vestiarios == null || vestiarios.Rows.Count == 0)
             {
@@ -38,40 +20,32 @@ namespace SistemaArmario
                 DBArmario.InserirVestiario("Masculino");
             }
 
-            // Inserir perfis padrão se não existirem
+            // 4. Insere perfis padrão se não existirem
             var perfis = DBArmario.GetPerfis();
             if (perfis == null || perfis.Rows.Count == 0)
             {
-                DBArmario.InserirPerfil("Acesso básico", "Funcionario");
-                DBArmario.InserirPerfil("Acesso administrativo", "Administrador");
+                DBArmario.CriarPerfisPadrao();
             }
 
-            // Inserir armários padrão para cada vestiário se não existirem
-            var vestiariosFeminino = DBArmario.GetVestiarios();
-            if (vestiariosFeminino != null && vestiariosFeminino.Rows.Count > 0)
+            // 5. Insere armários padrão para cada vestiário se não existirem
+            int femininoId = DBArmario.GetVestiarioIdPorNome("Feminino");
+            if (femininoId > 0)
             {
-                // Vestiário Feminino
-                int vestiarioFemininoId = DBArmario.GetVestiarioIdPorNome("Feminino");
-                if (vestiarioFemininoId > 0)
-                {
-                    var armariosFeminino = DBArmario.GetArmariosComStatus(vestiarioFemininoId);
-                    if (armariosFeminino == null || armariosFeminino.Rows.Count == 0)
-                    {
-                        DBArmario.PopularArmariosFixosExemplo(vestiarioFemininoId);
-                    }
-                }
-
-                // Vestiário Masculino
-                int vestiarioMasculinoId = DBArmario.GetVestiarioIdPorNome("Masculino");
-                if (vestiarioMasculinoId > 0)
-                {
-                    var armariosMasculino = DBArmario.GetArmariosComStatus(vestiarioMasculinoId);
-                    if (armariosMasculino == null || armariosMasculino.Rows.Count == 0)
-                    {
-                        DBArmario.PopularArmariosFixosExemplo(vestiarioMasculinoId);
-                    }
-                }
+                var armarios = DBArmario.GetArmariosComStatus(femininoId);
+                if (armarios == null || armarios.Rows.Count == 0)
+                    DBArmario.PopularArmariosFixosExemplo(femininoId);
             }
+
+            int masculinoId = DBArmario.GetVestiarioIdPorNome("Masculino");
+            if (masculinoId > 0)
+            {
+                var armarios = DBArmario.GetArmariosComStatus(masculinoId);
+                if (armarios == null || armarios.Rows.Count == 0)
+                    DBArmario.PopularArmariosFixosExemplo(masculinoId);
+            }
+
+            // 6. Popula funcionários de teste se o banco estiver vazio
+            DBArmario.PopularDadosTeste();
         }
     }
 }

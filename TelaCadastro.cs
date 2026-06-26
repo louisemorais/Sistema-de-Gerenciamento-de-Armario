@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace SistemaArmario
@@ -11,7 +8,7 @@ namespace SistemaArmario
     public partial class TelaCadastro : Form
     {
         private int armarioSelecionadoId = -1;
-        private Button? botaoSelecionado;  // ✅ Nullable explícito
+        private Button? botaoSelecionado;
 
         public TelaCadastro()
         {
@@ -20,12 +17,7 @@ namespace SistemaArmario
 
         private void TelaCadastro_Load(object sender, EventArgs e)
         {
-            
-        }
-
-        private void BackgroundArmario_Paint(object sender, PaintEventArgs e)
-        {
-
+            // Nada por enquanto — usuário deve escolher o vestiário primeiro
         }
 
         private void RadioBtnFeminino_CheckedChanged(object sender, EventArgs e)
@@ -48,6 +40,7 @@ namespace SistemaArmario
 
         private void CarregarArmarios(int vestiarioId)
         {
+            // Reseta seleção
             armarioSelecionadoId = -1;
             botaoSelecionado = null;
             BackgroundArmario.Controls.Clear();
@@ -56,7 +49,7 @@ namespace SistemaArmario
 
             if (armarios == null || armarios.Rows.Count == 0)
             {
-                MessageBox.Show("Nenhum armário disponível para este vestiário.", "Aviso", 
+                MessageBox.Show("Nenhum armário disponível para este vestiário.", "Aviso",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -67,74 +60,58 @@ namespace SistemaArmario
                 int numero = Convert.ToInt32(linha["numero_armario"]);
                 bool ocupado = Convert.ToInt32(linha["ocupado"]) > 0;
 
-                Button btnArmario = new Button();
-                btnArmario.Text = numero.ToString();
-                btnArmario.Size = new Size(50, 50);
-                btnArmario.Tag = armarioId;
-                btnArmario.FlatStyle = FlatStyle.Flat;
-                btnArmario.Font = new Font(btnArmario.Font, FontStyle.Bold);
+                var btn = new Button
+                {
+                    Text = numero.ToString(),
+                    Size = new Size(55, 55),
+                    Tag = armarioId,
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font(Font, FontStyle.Bold)
+                };
 
                 if (ocupado)
                 {
-                    btnArmario.BackColor = Color.Red;
-                    btnArmario.ForeColor = Color.White;
-                    btnArmario.Enabled = false;
+                    btn.BackColor = Color.IndianRed;
+                    btn.ForeColor = Color.White;
+                    btn.Enabled = false;
                 }
                 else
                 {
-                    btnArmario.BackColor = Color.LightGreen;
-                    btnArmario.ForeColor = Color.Black;
-                    btnArmario.Click += BtnArmario_Click;
+                    btn.BackColor = Color.MediumSeaGreen;
+                    btn.ForeColor = Color.White;
+                    btn.Click += BtnArmario_Click;
                 }
 
-                BackgroundArmario.Controls.Add(btnArmario);
+                BackgroundArmario.Controls.Add(btn);
             }
         }
 
         private void BtnArmario_Click(object sender, EventArgs e)
         {
-            if (sender is not Button btnClicado)
-            {
-                MessageBox.Show("Erro ao selecionar armário.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+            if (sender is not Button btnClicado) return;
 
+            // Desmarca seleção anterior
             if (botaoSelecionado != null)
-            {
-                botaoSelecionado.BackColor = Color.LightGreen;
-            }
+                botaoSelecionado.BackColor = Color.MediumSeaGreen;
 
+            // Marca novo selecionado
             btnClicado.BackColor = Color.DodgerBlue;
-            btnClicado.ForeColor = Color.White;
-
             botaoSelecionado = btnClicado;
-            if (btnClicado.Tag is int tagId)
-            {
-                armarioSelecionadoId = tagId;
-            }
-        }
-
-        private void CampoNome_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void CampoNumMatricula_TextChanged(object sender, EventArgs e)
-        {
-
+            armarioSelecionadoId = btnClicado.Tag is int id ? id : -1;
         }
 
         private void BtnEnviar_Click(object sender, EventArgs e)
         {
+            // Validações
             if (string.IsNullOrWhiteSpace(CampoNome.Text))
             {
                 MessageBox.Show("Informe o nome.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (!int.TryParse(CampoNumMatricula.Text, out int matricula))
+            if (!int.TryParse(CampoNumMatricula.Text, out int matricula) || matricula <= 0)
             {
-                MessageBox.Show("Matrícula inválida.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Matrícula inválida. Use apenas números.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -146,29 +123,56 @@ namespace SistemaArmario
 
             if (armarioSelecionadoId == -1)
             {
-                MessageBox.Show("Selecione um armário disponível.", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Selecione um armário disponível (verde).", "Atenção", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            int perfilId = 1; // perfil padrão "Funcionario"
+            // Perfil USER = id 2 (ADMIN = 1, conforme CriarPerfisPadrao)
+            int perfilId = 2;
 
-            DBArmario.InserirFuncionario(
-                nome: CampoNome.Text,
-                telefone: null,
-                armarioId: armarioSelecionadoId,
-                matricula: matricula,
-                perfilId: perfilId
-            );
+            try
+            {
+                DBArmario.InserirFuncionario(
+                    nome: CampoNome.Text.Trim(),
+                    telefone: null,
+                    armarioId: armarioSelecionadoId,
+                    matricula: matricula,
+                    perfilId: perfilId
+                );
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("UNIQUE"))
+                    MessageBox.Show("Esta matrícula já está cadastrada.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                else
+                    MessageBox.Show("Erro ao cadastrar: " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
-            MessageBox.Show("Cadastro realizado com sucesso!", "Sucesso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(
+                $"Cadastro realizado!\n\nUse a matrícula {matricula} para fazer login.",
+                "Sucesso",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
 
-            CampoNome.Clear();
-            CampoNumMatricula.Clear();
-            RadioBtnFeminino.Checked = false;
-            radioBtnMasculino.Checked = false;
-            BackgroundArmario.Controls.Clear();
-            armarioSelecionadoId = -1;
-            botaoSelecionado = null;
+            // Busca o id do funcionário recém-cadastrado para redirecionar
+            DataTable? usuario = DBArmario.LoginPorMatricula(matricula);
+            if (usuario != null && usuario.Rows.Count > 0)
+            {
+                int idFuncionario = Convert.ToInt32(usuario.Rows[0]["id"]);
+                var tela = new TelaDadosArmarioDoFuncionario(idFuncionario);
+                tela.Show();
+                tela.FormClosed += (s, ev) => this.Close();
+                this.Hide();
+            }
+            else
+            {
+                this.Close();
+            }
         }
+
+        private void BackgroundArmario_Paint(object sender, PaintEventArgs e) { }
+        private void CampoNome_TextChanged(object sender, EventArgs e) { }
+        private void CampoNumMatricula_TextChanged(object sender, EventArgs e) { }
     }
 }
