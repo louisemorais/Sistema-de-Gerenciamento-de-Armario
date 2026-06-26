@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Windows.Forms;
@@ -47,7 +48,7 @@ namespace SistemaArmario
                     string[] sqls = {
                         @"CREATE TABLE IF NOT EXISTS vestiario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            vestiario TEXT NOT NULL
+                            vestiario TEXT NOT NULL UNIQUE
                         );",
                         @"CREATE TABLE IF NOT EXISTS armario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,9 +79,8 @@ namespace SistemaArmario
 
                     foreach (var sql in sqls)
                     {
-                        using (var cmd = connection.CreateCommand())
+                        using (var cmd = conn.CreateCommand())
                         {
-                            cmd.Connection = conn;
                             cmd.CommandText = sql;
                             cmd.ExecuteNonQuery();
                         }
@@ -127,6 +127,7 @@ namespace SistemaArmario
             catch (Exception ex)
             {
                 Console.WriteLine("Erro ao criar perfis: " + ex.Message);
+                throw;
             }
         }
 
@@ -148,6 +149,7 @@ namespace SistemaArmario
                 using (var conn = DataBaseconnection())
                 using (var cmd = conn.CreateCommand())
                 {
+                    // Funciona como "ignore duplicado" só porque há UNIQUE em vestiario.vestiario
                     cmd.CommandText = "INSERT OR IGNORE INTO vestiario (vestiario) VALUES (@nome)";
                     cmd.Parameters.AddWithValue("@nome", nome);
                     cmd.ExecuteNonQuery();
@@ -156,6 +158,7 @@ namespace SistemaArmario
             catch (Exception ex)
             {
                 Console.WriteLine("Erro ao inserir vestiário: " + ex.Message);
+                throw;
             }
         }
 
@@ -175,7 +178,7 @@ namespace SistemaArmario
             catch (Exception ex)
             {
                 Console.WriteLine("Erro ao buscar vestiário: " + ex.Message);
-                return -1;
+                throw;
             }
         }
 
@@ -215,18 +218,12 @@ namespace SistemaArmario
             catch (Exception ex)
             {
                 Console.WriteLine("Erro ao buscar armários: " + ex.Message);
-                return null;
+                throw;
             }
         }
 
-        public static void PopularArmariosFixosExemplo(int vestiarioId)
+        public static void PopularArmariosFixosExemplo(int vestiarioId, int quantidade = 10)
         {
-            var armarios = new Dictionary<int, bool>
-            {
-                { 1, false }, { 2, false }, { 3, false }, { 4, false }, { 5, false },
-                { 6, false }, { 7, false }, { 8, false }, { 9, false }, { 10, false }
-            };
-
             try
             {
                 using (var conn = DataBaseconnection())
@@ -236,19 +233,16 @@ namespace SistemaArmario
                     {
                         using (var cmd = conn.CreateCommand())
                         {
-                            cmd.CommandText = "INSERT OR IGNORE INTO armario (numero_armario, vestiario_id, ocupado) VALUES (@num, @vid, @ocu)";
+                            cmd.CommandText = "INSERT OR IGNORE INTO armario (numero_armario, vestiario_id, ocupado) VALUES (@num, @vid, 0)";
                             cmd.Transaction = transaction;
 
                             var pNum = cmd.Parameters.Add("@num", SqliteType.Integer);
                             var pVid = cmd.Parameters.Add("@vid", SqliteType.Integer);
-                            var pOcu = cmd.Parameters.Add("@ocu", SqliteType.Integer);
-
                             pVid.Value = vestiarioId;
 
-                            foreach (var item in armarios)
+                            for (int numero = 1; numero <= quantidade; numero++)
                             {
-                                pNum.Value = item.Key;
-                                pOcu.Value = item.Value ? 1 : 0;
+                                pNum.Value = numero;
                                 cmd.ExecuteNonQuery();
                             }
                         }
@@ -265,6 +259,7 @@ namespace SistemaArmario
             catch (Exception ex)
             {
                 Console.WriteLine("Erro ao popular armários: " + ex.Message);
+                throw;
             }
         }
 
@@ -304,14 +299,14 @@ namespace SistemaArmario
             catch (Exception ex)
             {
                 Console.WriteLine("Erro ao buscar funcionário: " + ex.Message);
-                return null;
+                throw;
             }
         }
 
         public static void InserirFuncionario(string nome, string? telefone, int armarioId, int matricula, int perfilId)
         {
             if (string.IsNullOrWhiteSpace(nome) || armarioId <= 0 || matricula <= 0 || perfilId <= 0)
-                return;
+                throw new ArgumentException("Dados inválidos para inserir funcionário.");
 
             try
             {
@@ -365,8 +360,10 @@ namespace SistemaArmario
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Erro ao fazer login: " + ex.Message, "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return null;
+                // Camada de dados não deveria chamar MessageBox diretamente;
+                // relança para a Form decidir como exibir o erro.
+                Console.WriteLine("Erro ao fazer login: " + ex.Message);
+                throw;
             }
         }
 
@@ -383,15 +380,25 @@ namespace SistemaArmario
                 if (funcionarios != null && funcionarios.Rows.Count > 0)
                     return;
 
-                // ADMIN: matrícula 1111, armário 1 (feminino)
+                // Garante que perfis e ao menos um vestiário/armário existam antes de inserir
+                var perfis = GetPerfis();
+                if (perfis == null || perfis.Rows.Count == 0)
+                    throw new InvalidOperationException("Perfis padrão não encontrados. Chame CriarPerfisPadrao() antes.");
+
+                var armarios = GetArmarios();
+                if (armarios == null || armarios.Rows.Count < 2)
+                    throw new InvalidOperationException("Armários insuficientes. Popule vestiário/armários antes de criar dados de teste.");
+
+                // ADMIN: matrícula 1111, armário 1
                 InserirFuncionario("Administrador", null, 1, 1111, 1);
 
-                // USER: matrícula 2222, armário 2 (feminino)
+                // USER: matrícula 2222, armário 2
                 InserirFuncionario("Funcionário Teste", null, 2, 2222, 2);
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Erro ao popular dados de teste: " + ex.Message);
+                throw;
             }
         }
 
@@ -416,7 +423,7 @@ namespace SistemaArmario
             catch (Exception ex)
             {
                 Console.WriteLine($"Erro ao executar query: {ex.Message}");
-                return null;
+                throw;
             }
         }
     }
