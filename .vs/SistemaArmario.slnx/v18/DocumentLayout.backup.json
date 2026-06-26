@@ -7,7 +7,7 @@
       "RelativeMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|solutionrelative:dbarmario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|c:\\users\\louis\\desktop\\projetointegrador\\sistema-de-gerenciamento-de-armario\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "AbsoluteMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{9AE4F460-75B3-4748-710F-66C443A679D7}|SistemaArmario.csproj|solutionrelative:form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
@@ -64,7 +64,7 @@
               "RelativeDocumentMoniker": "DBArmario.cs",
               "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\DBArmario.cs",
               "RelativeToolTip": "DBArmario.cs",
-              "ViewState": "AgIAAGMBAAAAAAAAAAAqwPAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAH0BAAAAAAAAAAAuwGcBAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-26T00:11:01.089Z",
               "EditorCaption": ""
@@ -78,8 +78,7 @@
               "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\Form1.cs [Projeto]",
               "RelativeToolTip": "Form1.cs [Projeto]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-25T23:13:47.177Z",
-              "EditorCaption": " [Projeto]"
+              "WhenOpened": "2026-06-25T23:13:47.177Z"
             },
             {
               "$type": "Document",
@@ -90,8 +89,7 @@
               "ToolTip": "C:\\Users\\louis\\Desktop\\projetoIntegrador\\Sistema-de-Gerenciamento-de-Armario\\TelaCadastro.cs [Projeto]",
               "RelativeToolTip": "TelaCadastro.cs [Projeto]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-25T23:14:20.23Z",
-              "EditorCaption": " [Projeto]"
+              "WhenOpened": "2026-06-25T23:14:20.23Z"
             },
             {
               "$type": "Document",
@@ -116,8 +114,7 @@
               "RelativeToolTip": "Form1.Designer.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAFAAAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-25T23:25:28.061Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-25T23:25:28.061Z"
             },
             {
               "$type": "Document",
@@ -129,8 +126,7 @@
               "RelativeToolTip": "Form1.cs",
               "ViewState": "AgIAAGcAAAAAAAAAAIAwwHoAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-25T23:14:03.5Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-25T23:14:03.5Z"
             },
             {
               "$type": "Document",
@@ -142,8 +138,7 @@
               "RelativeToolTip": "TelaCadastro.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAALEAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-25T23:14:25.729Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-25T23:14:25.729Z"
             },
             {
               "$type": "Document",

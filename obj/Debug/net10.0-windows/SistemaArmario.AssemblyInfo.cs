@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SistemaArmario")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a2ac53fc7a966ac78560ceec2d7e95a4d7fbbb6e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ca7f8fa1d5fccb54dd8bf5ac95af7c6b8e3de02c")]
 [assembly: System.Reflection.AssemblyProductAttribute("SistemaArmario")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SistemaArmario")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
