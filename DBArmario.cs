@@ -31,8 +31,6 @@ namespace SistemaArmario
 
         public static void CriarDataBase()
         {
-            // Microsoft.Data.Sqlite cria o arquivo automaticamente ao abrir conexão.
-            // Apenas garante que o diretório existe.
             string? dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
@@ -44,7 +42,6 @@ namespace SistemaArmario
             {
                 using (var conn = DataBaseconnection())
                 {
-                    // Cada CREATE TABLE precisa de um comando separado no Microsoft.Data.Sqlite
                     string[] sqls = {
                         @"CREATE TABLE IF NOT EXISTS vestiario (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -149,7 +146,6 @@ namespace SistemaArmario
                 using (var conn = DataBaseconnection())
                 using (var cmd = conn.CreateCommand())
                 {
-                    // Funciona como "ignore duplicado" só porque há UNIQUE em vestiario.vestiario
                     cmd.CommandText = "INSERT OR IGNORE INTO vestiario (vestiario) VALUES (@nome)";
                     cmd.Parameters.AddWithValue("@nome", nome);
                     cmd.ExecuteNonQuery();
@@ -360,8 +356,6 @@ namespace SistemaArmario
             }
             catch (Exception ex)
             {
-                // Camada de dados não deveria chamar MessageBox diretamente;
-                // relança para a Form decidir como exibir o erro.
                 Console.WriteLine("Erro ao fazer login: " + ex.Message);
                 throw;
             }
@@ -375,12 +369,10 @@ namespace SistemaArmario
         {
             try
             {
-                // Só insere se não houver funcionários
                 var funcionarios = GetFuncionarios();
                 if (funcionarios != null && funcionarios.Rows.Count > 0)
                     return;
 
-                // Garante que perfis e ao menos um vestiário/armário existam antes de inserir
                 var perfis = GetPerfis();
                 if (perfis == null || perfis.Rows.Count == 0)
                     throw new InvalidOperationException("Perfis padrão não encontrados. Chame CriarPerfisPadrao() antes.");

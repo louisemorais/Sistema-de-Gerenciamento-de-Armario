@@ -40,7 +40,6 @@ namespace SistemaArmario
 
         private void CarregarArmarios(int vestiarioId)
         {
-            // Reseta seleção
             armarioSelecionadoId = -1;
             botaoSelecionado = null;
             BackgroundArmario.Controls.Clear();
